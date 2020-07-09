@@ -7,34 +7,55 @@
     'required' => true,
 ])
 
-<div class="flex flex-wrap justify-between">
+<div class="w-2/3">
 
-    @include('maelstrom::inputs.switch', [
-        'name' => 'uptime_enabled',
-        'label' => 'Enable Up-Time Monitoring?',
-        'hide_off' => ['uptime_keyword'],
-    ])
+    <div class="flex flex-wrap justify-between">
+        <div class="w-1/3">
+            @include('maelstrom::inputs.switch', [
+                'name' => 'uptime_enabled',
+                'label' => 'Enable Up-Time Monitoring?',
+                'hide_off' => ['uptime_keyword'],
+            ])
+        </div>
 
-    @include('maelstrom::inputs.switch', [
-        'name' => 'ssl_enabled',
-        'label' => 'Enable SSL Monitoring?'
-    ])
+        <div class="w-1/3">
+            @include('maelstrom::inputs.switch', [
+                'name' => 'ssl_enabled',
+                'label' => 'Enable SSL Monitoring?'
+            ])
+        </div>
 
-    @include('maelstrom::inputs.switch', [
-        'name' => 'robots_enabled',
-        'label' => 'Enable Robots.txt Monitoring?'
-    ])
+        <div class="w-1/3">
+            @include('maelstrom::inputs.switch', [
+                'name' => 'robots_enabled',
+                'label' => 'Enable Robots.txt Monitoring?'
+            ])
+        </div>
+    </div>
 
-    @include('maelstrom::inputs.switch', [
-        'name' => 'dns_enabled',
-        'label' => 'Enable DNS Monitoring?'
-    ])
+    <div class="mt-5 flex flex-wrap justify-between">
+        <div class="w-1/3">
+            @include('maelstrom::inputs.switch', [
+                'name' => 'dns_enabled',
+                'label' => 'Enable DNS Monitoring?'
+            ])
+        </div>
 
-    @include('maelstrom::inputs.switch', [
-        'name' => 'cron_enabled',
-        'label' => 'Enable Cron Monitoring?',
-        'hide_off' => ['cron_key', 'cron_info'],
-    ])
+        <div class="w-1/3">
+            @include('maelstrom::inputs.switch', [
+                'name' => 'cron_enabled',
+                'label' => 'Enable Cron Monitoring?',
+                'hide_off' => ['cron_key', 'cron_info'],
+            ])
+        </div>
+
+        <div class="w-1/3">
+            @include('maelstrom::inputs.switch', [
+                'name' => 'crawler_enabled',
+                'label' => 'Enable Crawler?'
+            ])
+        </div>
+    </div>
 </div>
 
 @include('maelstrom::inputs.text', [
@@ -57,6 +78,7 @@
     'charset' => 'qwertyuiopasdfghjklzxcvbnm1234567890QWERTYUIOPASDFGHJKLZXCVBNM',
 ])
 
+@if($entry)
 <div id="cron_info_field" class="cloak">
     <p>
         When your scheduled task starts, you should ping:
@@ -73,3 +95,8 @@
         <pre><code>{{ route('ping.stop', ['website' => $entry, 'task' => 'Optimise-Images']) }}</code></pre>
     </p>
 </div>
+@else
+    <div id="cron_info_field" class="cloak">
+        <p>Once you've "Saved" this website, we'll provide you with your ping endpoints.</p>
+    </div>
+@endif

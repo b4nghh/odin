@@ -21,17 +21,7 @@ class ScanDnsCommand extends Command
      *
      * @var string
      */
-    protected $description = 'Command description';
-
-    /**
-     * Create a new command instance.
-     *
-     * @return void
-     */
-    public function __construct()
-    {
-        parent::__construct();
-    }
+    protected $description = 'Runs the DNS checks for all enabled websites.';
 
     /**
      * Execute the console command.
@@ -40,7 +30,7 @@ class ScanDnsCommand extends Command
      */
     public function handle()
     {
-        Website::where('dns_enabled', 1)->get()->each(function (Website $website) {
+        Website::canScanDns()->get()->each(function (Website $website) {
             DnsCheck::dispatch($website);
             dump('DNS check queued for ' . $website->url);
         });

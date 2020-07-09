@@ -21,17 +21,7 @@ class ScanOpenGraphCommand extends Command
      *
      * @var string
      */
-    protected $description = 'Command description';
-
-    /**
-     * Create a new command instance.
-     *
-     * @return void
-     */
-    public function __construct()
-    {
-        parent::__construct();
-    }
+    protected $description = 'Runs the Open graph checks for all enabled websites.';
 
     /**
      * Execute the console command.
@@ -40,7 +30,7 @@ class ScanOpenGraphCommand extends Command
      */
     public function handle()
     {
-        Website::all()->each(function (Website $website) {
+        Website::canScanOpenGraph()->get()->each(function (Website $website) {
             OpenGraphCheck::dispatch($website);
             dump('Open Graph check queued for ' . $website->url);
         });

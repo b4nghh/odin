@@ -27,6 +27,7 @@ class RobotsCheck implements ShouldQueue
     public function __construct(Website $website)
     {
         $this->website = $website;
+        $this->website->queue('robots');
     }
 
     /**
@@ -38,5 +39,15 @@ class RobotsCheck implements ShouldQueue
     {
         $checker = new Robots($this->website);
         $checker->run();
+
+        $this->website->unqueue('robots');
+    }
+
+    public function tags()
+    {
+        return [
+            static::class,
+            'Website:' . $this->website->id,
+        ];
     }
 }

@@ -21,17 +21,7 @@ class ScanRobotsCommand extends Command
      *
      * @var string
      */
-    protected $description = 'Command description';
-
-    /**
-     * Create a new command instance.
-     *
-     * @return void
-     */
-    public function __construct()
-    {
-        parent::__construct();
-    }
+    protected $description = 'Runs the robots.txt checks for all enabled websites.';
 
     /**
      * Execute the console command.
@@ -40,7 +30,7 @@ class ScanRobotsCommand extends Command
      */
     public function handle()
     {
-        Website::where('robots_enabled', 1)->get()->each(function (Website $website) {
+        Website::canScanRobots()->get()->each(function (Website $website) {
             RobotsCheck::dispatch($website);
             dump('Robots check queued for ' . $website->url);
         });

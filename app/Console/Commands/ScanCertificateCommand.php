@@ -16,24 +16,14 @@ class ScanCertificateCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'scan:certificate';
+    protected $signature = 'scan:certificates';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Command description';
-
-    /**
-     * Create a new command instance.
-     *
-     * @return void
-     */
-    public function __construct()
-    {
-        parent::__construct();
-    }
+    protected $description = 'Runs the SSL checks for all enabled websites.';
 
     /**
      * Execute the console command.
@@ -42,7 +32,7 @@ class ScanCertificateCommand extends Command
      */
     public function handle()
     {
-        Website::where('ssl_enabled', 1)->get()->each(function (Website $website) {
+        Website::canScanCertificates()->get()->each(function (Website $website) {
             CertificateCheck::dispatch($website);
             dump('Certificate check queued for ' . $website->url);
         });

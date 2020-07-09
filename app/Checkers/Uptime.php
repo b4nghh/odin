@@ -2,17 +2,23 @@
 
 namespace App\Checkers;
 
+use Exception;
 use App\Website;
 use App\UptimeScan;
 use GuzzleHttp\Client;
 use Illuminate\Support\Str;
-use SebastianBergmann\Diff\Differ;
+use GuzzleHttp\RequestOptions;
+use App\Jobs\CacheUptimeReport;
 use App\Notifications\WebsiteIsDown;
 use App\Notifications\WebsiteIsBackUp;
 
 class Uptime
 {
     private $website;
+
+    private const RETRY_TIMES = 3;
+
+    private const RETRY_SLEEP_MILLISECONDS = 5000;
 
     public function __construct(Website $website)
     {
@@ -23,39 +29,72 @@ class Uptime
     {
         $this->fetch();
         $this->notify();
+        $this->cache();
+    }
+
+    private function tryRequest()
+    {
+        $responseTime = 3001;
+        $keywordFound = false;
+
+        try {
+            $response = (new Client)->request('GET', $this->website->url, [
+                RequestOptions::ON_STATS => function ($stats) use (&$responseTime) {
+                    $responseTime = $stats->getTransferTime();
+                },
+                RequestOptions::HTTP_ERRORS => false,
+                RequestOptions::VERIFY => false,
+                RequestOptions::ALLOW_REDIRECTS => true,
+                RequestOptions::HEADERS => [
+                    'User-Agent' => config('app.user_agent'),
+                ],
+                RequestOptions::CONNECT_TIMEOUT => 20,
+                RequestOptions::READ_TIMEOUT => 20,
+                RequestOptions::TIMEOUT => 60,
+                RequestOptions::DEBUG => false,
+            ]);
+
+            $responseBody = mb_strtolower($response->getBody());
+            $keywordFound = Str::contains($responseBody, mb_strtolower($this->website->uptime_keyword));
+
+            if (!$keywordFound && $response->getStatusCode() == '200') {
+                $reason = sprintf('Keyword: %s not found (%d)', $this->website->uptime_keyword, 200);
+            } else {
+                $reason = sprintf('%s (%d)', $response->getReasonPhrase(), $response->getStatusCode());
+            }
+        } catch (Exception $exception) {
+            $reason = $exception->getMessage();
+            $responseBody = $exception->getTraceAsString();
+        }
+
+        $data = [
+            'response_status' => $reason,
+            'response_body' => $keywordFound ? '' : $responseBody,
+            'was_online' => $keywordFound,
+            'response_time' => $responseTime,
+        ];
+
+        if (!$keywordFound) {
+            $exception = new Exception($reason);
+            $exception->data = $data;
+
+            throw $exception;
+        }
+
+        return $data;
     }
 
     private function fetch()
     {
-        $client = new Client();
-
-        $response_time = 3001;
-
-        $response = $client->request('GET', $this->website->url, [
-            'on_stats' => function ($stats) use (&$response_time) {
-                $response_time = $stats->getTransferTime();
-            },
-            'verify' => false,
-            'allow_redirects' => true,
-            'headers' => [
-                'User-Agent' => 'Mozilla/5.0+(compatible; UptimeRobot/2.0; http://www.uptimerobot.com/; Odin)'
-            ],
-        ]);
-
-        $keywordFound = Str::contains($response->getBody(), $this->website->uptime_keyword);
-
-        if (!$keywordFound && $response->getStatusCode() == '200') {
-            $reason = sprintf('Keyword: %s not found (%d)', $this->website->uptime_keyword, 200);
-        } else {
-            $reason = sprintf('%s (%d)', $response->getReasonPhrase(), $response->getStatusCode());
+        try {
+            $data = retry(static::RETRY_TIMES, function () {
+                return $this->tryRequest();
+            }, static::RETRY_SLEEP_MILLISECONDS);
+        } catch (Exception $exception) {
+            $data = $exception->data;
         }
 
-        $scan = new UptimeScan([
-            'response_status' => $reason,
-            'response_time' => $response_time,
-            'was_online' => $keywordFound,
-        ]);
-
+        $scan = new UptimeScan($data);
         $this->website->uptimes()->save($scan);
     }
 
@@ -79,5 +118,10 @@ class Uptime
                 new WebsiteIsDown($this->website)
             );
         }
+    }
+
+    private function cache()
+    {
+        CacheUptimeReport::dispatch($this->website);
     }
 }

@@ -27,6 +27,8 @@ class UptimeCheck implements ShouldQueue
     public function __construct(Website $website)
     {
         $this->website = $website;
+        $this->onQueue('default_long');
+        $this->website->queue('uptime');
     }
 
     /**
@@ -38,5 +40,15 @@ class UptimeCheck implements ShouldQueue
     {
         $checker = new Uptime($this->website);
         $checker->run();
+
+        // The unqueue is annoyingly configured in the CacheUptimeReport class
+    }
+
+    public function tags()
+    {
+        return [
+            static::class,
+            'Website:' . $this->website->id,
+        ];
     }
 }

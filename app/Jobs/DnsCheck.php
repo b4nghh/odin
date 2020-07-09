@@ -27,6 +27,8 @@ class DnsCheck implements ShouldQueue
     public function __construct(Website $website)
     {
         $this->website = $website;
+
+        $this->website->queue('dns');
     }
 
     /**
@@ -38,5 +40,15 @@ class DnsCheck implements ShouldQueue
     {
         $checker = new Dns($this->website);
         $checker->run();
+
+        $this->website->unqueue('dns');
+    }
+
+    public function tags()
+    {
+        return [
+            static::class,
+            'Website:' . $this->website->id,
+        ];
     }
 }

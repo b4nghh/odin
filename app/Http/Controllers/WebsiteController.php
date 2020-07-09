@@ -29,6 +29,8 @@ class WebsiteController extends Controller
                     'name' => 'url',
                     'label' => 'Website',
                     'type' => 'EditLinkColumn',
+                    'searchable' => true,
+                    'searchColumn' => 'url',
                 ],
                 [
                     'name' => 'ssl_enabled',
@@ -58,6 +60,12 @@ class WebsiteController extends Controller
                     'name' => 'cron_enabled',
                     'type' => 'BooleanColumn',
                     'label' => 'Crons',
+                    'align' => 'center',
+                ],
+                [
+                    'name' => 'crawler_enabled',
+                    'type' => 'BooleanColumn',
+                    'label' => 'Crawler',
                     'align' => 'center',
                 ],
             ]);
@@ -180,10 +188,10 @@ class WebsiteController extends Controller
     public function destroy(Website $website)
     {
         $this->panel->setEntry($website);
-        
+
         $this->panel->destroy('Website removed.');
-        
-        Artisan::call('horizon:terminate');
+
+        // Artisan::call('horizon:terminate');
 
         return $this->panel->redirect('index');
     }
